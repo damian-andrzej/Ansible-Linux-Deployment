@@ -1,5 +1,6 @@
 A description for host preparation using ansible playbooks. 
 #I've been using roles to increase quality and readablility.
+This is main part of playbook when roles are induced. Into next points, each of role will be described including ansible code.
 roles: 
     - role: groups 
     - role: users
@@ -184,6 +185,56 @@ and then processes the values of the registered variable with the b64decode and 
  - disable password login
  - define maximum amount of connection attempts
  - configure not-default port
+ 
+ Code:
+ vars_files:
+   - vars/ssh_variables
+ 
+ tasks:
+  - name: template render
+    ansible.builtin.template:
+      src: /tmp/j2-template.j2
+      dest: /tmp/dest-config-file.txt
+ 
+ # {{ ansible_managed }}
+# DO NOT MAKE LOCAL MODIFICATIONS TO THIS FILE BECAUSE THEY WILL BE LOST
+
+Port {{ ssh_port }}
+# custom ssh port - defined into ssh_variables file as 2022
+ListenAddress {{ ansible_facts['default_ipv4']['address'] }}
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+SyslogFacility AUTHPRIV
+
+#PermitRootLogin {{ root_allowed }}
+AllowGroups {{ groups_allowed }}
+
+AllowUsers {{ users_allowed }}
+# only ansible and dev1 users are allowed to open ssh connections with managed hosts
+
+AuthorizedKeysFile /etc/.rht_authorized_keys .ssh/authorized_keys
+
+#PasswordAuthentication {{ passwords_allowed }}
+
+ChallengeResponseAuthentication no
+
+GSSAPIAuthentication yes
+GSSAPICleanupCredentials no
+
+UsePAM yes
+
+X11Forwarding yes
+UsePrivilegeSeparation sandbox
+
+AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
+AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
+AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE
+AcceptEnv XMODIFIERS
+
+Subsystem sftp	/usr/libexec/openssh/sftp-server
 
       
       
