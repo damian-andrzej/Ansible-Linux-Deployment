@@ -247,6 +247,7 @@ Subsystem sftp	/usr/libexec/openssh/sftp-server
 
 6. MOTD 
 This playbook edit /etc/motd file thats sets welcome message that displays immediately  after user log in.
+During the loggin user see hostname, ipaddress, destro version and memory info(used/available) swap and RAM
 
 # It copies the template motd.j2 and change variable with ansible_facts of managed hosts
 - name: change motd
@@ -271,6 +272,43 @@ This is a {{ ansible_facts['distribution' }} version {{ ansible_facts['distribut
 ansible_facts['memtotal_mb'] and ansible_facts['processor_count']
 memory used ansible_facts['memory_mb']['nocache']['used'] / free memory ansible_facts['memory_mb']['nocache']['free']
 used swap ansible_facts['memory_mb']['swap']['used'] / free swap ansible_facts['memory_mb']['free']
+
+7. Backups
+
+Playbook creates and sets directory for files storage. In this example we create synchornize copy of home directories.
+IMPORTANT: its not good playbook for deployment procedure, that role wont be implement during machine creation.
+We are going to use that script to perform cyclical backup of user files.
+
+Usually cron jobs are used for this task but I changed scheduled script for synchronize ansible module
+•	synchronize is a wrapper around rsync to make common tasks in your playbooks quick and easy.
+•	It is run and originates on the local host where Ansible is being run.
+•	Of course, you could just use the command action to call rsync yourself, 
+but you also have to add a fair number of boilerplate options and host facts.
+
+To install it, use - ansible-galaxy collection install ansible.posix
+
+---
+- name: using synchronize module
+  hosts: all
+  become: true
+  tasks:
+    - name: synchronize and backup home dirs for all users
+      ansible.posix.synchronize:
+        src: /home
+        dest: /backup-local2/backup/home
+        recursive: no # enables an archive backup
+	
+OPTIONAL - use cron jobs to automate backups. It runs their personal backup-home script at 24:00 every Saturday
+
+- name: Schedule backups for my home directory
+  ansible.builtin.cron:
+    name: Backup my home directory
+    user: ansible
+    job: /scripts/backup-home.sh
+    minute: 0
+    hour: 24
+    weekday: 6
+
 
       
       
