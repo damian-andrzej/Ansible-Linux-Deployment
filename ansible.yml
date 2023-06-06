@@ -1,0 +1,203 @@
+A description for host preparation using ansible playbooks. 
+#I've been using roles to increase quality and readablility.
+roles: 
+    - role: groups 
+    - role: users
+    - role: sshd_config # increase security of sshd service
+    - role: motd # setup MOTD banner
+    - role: sudo # setup sudo config
+    - role: home_backup # home directories backup
+    - role: install_software # install all required package
+    - role: gantsign.oh-my-zsh # install oh-my-zsh
+      users:
+      - username: admin
+    - role: zsh-plugins # configure oh-my-zsh plugins
+    - role: docker-infra # setup docker infrastructure
+    - role: ufw # configure UFW firewall
+    
+    1. Group creation 
+    First task is group creation, to manage your infrastracture well, we need to provide appropriate groups and permissions
+    	Fortunately, Ansible ships with more than a thousand modules, including one for reading CSV files. 
+    This module can provide exactly what's needed for this task. You'll see the module in action below
+    
+# to use read_csv you must install community.general lib
+# ansible-galaxy install community.general
+---
+- name: create groups from csv
+  hosts: all
+  tasks:
+    - name: reading the csv file before final run
+      community.general.read_csv:
+        path: groups-list.csv
+      register: groups_list
+      delegate_to: localhost  # playbook will refer to ansible server files - csv files exists only at server side
+
+    - name: create groups from csv file
+      ansible.builtin.group:
+        name: "{{ item.Group_name }}"
+        gid: "{{ item.GID }}"
+        #comment: "This is a Admin group for system management tasks"
+        #comments are not available for groups, in opposite to users
+        state: present
+      loop: "{{ groups_list.list }}"
+      # .list notation to retrive record from dictionary
+      # read_csv format csv to dict - simmilar to python read_csv()
+      become: true
+      # escalate to root - must have for actual ansible user
+      
+      2. Users creation.
+      Simmilar task connected with first one is user creationm we are going to use same python lib from previous tasks.
+      lets create a csv file that includes list of users
+      
+      Username,uid,First_name,Last_name,Groups,Password
+      ansible_dev,9012,Rachel,Booker,Admins,TempPasswd321
+      dev1,9013,Michael,Cortney,Admins,Passw000rd333
+      web_dev,9015,Kristian,Michalak,Webmasters,Passxdd2137
+      jenkins_dev,9014,Donovan,Valenrod,Admins,Passw333Temp4
+      ansible_viewer,9016,No,Name,Admins,Tempopassowrd31
+      
+      CODE: 
+# to use read_csv you must install community.general lib
+# ansible-galaxy install community.general
+---
+- name: create users from csv
+  hosts: all
+  tasks:
+    - name: reading the csv file before final run
+      community.general.read_csv:
+        path: users-list.csv
+      register: users_list
+      delegate_to: localhost
+
+    - name: create users from csv file
+      ansible.builtin.user:
+        name: "{{ item.Username }}"
+        uid: "{{ item.UID }}"
+        groups: "{{ item.Groups}}"
+        append: true
+        password: "{{ item.Password | password_hash('sha512') }}"
+        comment: "{{ item.First_name }} {{item.Last_name }}"
+        state: present
+      loop: "{{ users_list.list }}"
+      # .list notation to retrive record from dictionary
+      # read_csv format csv to dict - simmilar to python read_csv()
+      become: true
+      # escalate to root - must have for actual ansible user
+      
+      
+      2.2 In some cases python library that contains read_csv  may produce some errors. 
+      There is alternative way to manage users adding process – by variables.
+      At first we need to create a file and declare a list of users.
+      Example below
+---
+users:
+  - username: dev1
+    groups: Admins
+  - username: dev2
+    groups: Admins
+  - username: dev3
+    groups: Admins
+  - username: dev4
+    groups: Admins
+  - username: dev5
+    groups: Admins
+    
+Afterwards, lets create playbook that go loop through this list
+      
+---
+- name: Create multiple local users
+  hosts: webservers
+  vars_files:
+    - vars/users_vars.yml
+    
+  tasks:
+    - name: Add webadmin group
+      ansible.builtin.group:
+        name: webadmin
+        state: present
+
+    - name: Create user accounts
+      ansible.builtin.user:
+        name: "{{ item['username'] }}"
+        groups: "{{ item['groups'] }}"
+      loop: "{{ users }}"
+      
+  4. Sudo file settings
+  
+  Our goal is to add Admins group to sudoers file and verify configuration afterwards. 
+  The following example demonstrates how to use the ansible.builtin.lineinfile module to provide a group with sudo access to the root account,
+  without prompting the group members for a password
+    
+---
+- name: modify sudo to allow Admins to sudo
+  hosts: all
+  become: true
+  tasks:
+    - name: edit sudoers file by lineinfile module
+      path: /etc/sudoers.d/Admins # line depends on linux distro
+      #this one tested for Rhel 7 and upper and Centos 7 and upper
+      state: present
+      create: true # if file dont exists this line will create one
+      mode: 0440
+      line: "%Admins ALL=(ALL) NO PASSWD: ALL"
+      validate: /usr/sbin/visudo -cf %s
+      #validate parameter make final check of user sudo access
+      
+  5. SSH settings
+  
+  5.1	Known hosts
+  
+The following play is an example that uses some advanced techniques to construct an /etc/ssh/ssh_known_hostsfile for all 
+managed hosts in the inventory. There might be more efficient ways to accomplish this, because it runs a nested loop on all managed hosts.
+It uses the ansible.builtin.slurp module to get the content of the RSA and Ed25519 SSH public host keys in Base64 format,
+and then processes the values of the registered variable with the b64decode and trim filters to convert those values back to plain text.
+
+	- name: Configure /etc/ssh/ssh_known_hosts files
+	  hosts: all
+	  tasks:
+	    - name: Collect RSA keys
+	      ansible.builtin.slurp:
+	        src: /etc/ssh/ssh_host_rsa_key.pub
+        register: rsa_host_keys
+	
+	    - name: Collect Ed25519 keys
+	      ansible.builtin.slurp:
+	        src: /etc/ssh/ssh_host_ed25519_key.pub
+	      register: ed25519_host_keys
+	
+	    - name: Deploy known_hosts
+	      ansible.builtin.known_hosts:
+	        path: /etc/ssh/ssh_known_hosts
+	        name: "{{ item[0] }}"  
+	        key: "{{ hostvars[ item[0] ]['ansible_facts']['fqdn'] }} {{ hostvars[ item[0] ][ item[1] ]['content'] | b64decode | trim }}"  
+	        state: present
+          with_nested:
+	        - "{{ ansible_play_hosts }}"  
+	        - [ 'rsa_host_keys', 'ed25519_host_keys' ]
+          
+ 5.2 SSH loggin settings
+ 
+ Linux & UNIX machines are mainly managed by ssh protocol therefore its important to harden those connection properly.
+ SSH requirements for managed hosts 
+ - allow only specified users to connect by ssh
+ - disable root login
+ - disable password login
+ - define maximum amount of connection attempts
+ - configure not-default port
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
