@@ -186,7 +186,16 @@ and then processes the values of the registered variable with the b64decode and 
  - define maximum amount of connection attempts
  - configure not-default port
  
+ After playbook make changes to sshd_conf file, sshd service will be restarted by handler.
+ Without restart changed will not  be applied. 
+ handlers:
+    - name: "Reload SSHD"
+      service:
+        name: sshd
+        state: restarted
+ 
  Code:
+ 
  vars_files:
    - vars/ssh_variables
  
@@ -223,7 +232,7 @@ ChallengeResponseAuthentication no
 
 GSSAPIAuthentication yes
 GSSAPICleanupCredentials no
-
+MaxSessions 5 # no more than 5 session allowed to establish ssh connection by 1 ip address
 UsePAM yes
 
 X11Forwarding yes
@@ -236,7 +245,33 @@ AcceptEnv XMODIFIERS
 
 Subsystem sftp	/usr/libexec/openssh/sftp-server
 
-      
+6. MOTD 
+This playbook edit /etc/motd file thats sets welcome message that displays immediately  after user log in.
+
+# It copies the template motd.j2 and change variable with ansible_facts of managed hosts
+- name: change motd
+  hosts: all
+  remote_user: devops
+  become: true
+  vars:
+    - system_owner: damianus@serwis.com
+  tasks:
+    - name: configure MOTD
+      ansible.builtin.template:
+      src: motd.j2
+      dest: /etc/motd
+      owner: root
+      group: root
+      mode: 0644
+
+#EXAMPLE OF TEMPLATE - jinja2 template
+
+THis is a system {{ ansible_facts['fqdn'] }}
+This is a {{ ansible_facts['distribution' }} version {{ ansible_facts['distribution_version'] }} system
+ansible_facts['memtotal_mb'] and ansible_facts['processor_count']
+memory used ansible_facts['memory_mb']['nocache']['used'] / free memory ansible_facts['memory_mb']['nocache']['free']
+used swap ansible_facts['memory_mb']['swap']['used'] / free swap ansible_facts['memory_mb']['free']
+
       
       
       
