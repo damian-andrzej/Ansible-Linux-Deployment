@@ -9,17 +9,61 @@ roles:
     - role: sudo # setup sudo config
     - role: home_backup # home directories backup
     - role: install_software # install all required package
-    - role: default_target # install oh-my-zsh
-      users:
-      - username: admin
+    - role: default_target # set default target
     - role: zsh-plugins # configure oh-my-zsh plugins
     - role: docker-infra # setup docker infrastructure
     - role: ufw # configure UFW firewall
     
+    0. Format and mount additional file systems
+    We need to add mount points for webserver data, backup and swap.
+    Redhat ansible library provides roles to automate filesystem creation by LVM.
+    
+    IMPORTANT Disk used for lvm ansible config must be cleared without any data or even partition table
+    In some cases fdisk cant handle this task properly, but this commands works more effective
+    # sudo sgdisk -Z /dev/sdx
+    # source : https://unix.stackexchange.com/questions/202749/remove-all-traces-of-gpt-disk-label
+    
+    # Its require to install rhel roles
+    # dnf -y install rhel-system-roles
+    ---
+    - name: configure storage for backup, webserver data & swap
+      hosts: webservers
+      become: true
+      
+      roles: 
+        - name: redhat.rhel_system_roles.storage
+	#its one of the roles provided by rhel-system-roles package
+	  storage_pools:
+	    - name: volume_group1
+	      type: lvm
+	      disks:
+	       - /dev/sdb
+	# for different system disk may be named different, its good to precheck it with lsblk cmd
+	      volumes:
+	        - name: lvolume1
+		  size: 512m
+		  mount_point: "/webserver_data"
+		  fs_type: xfs
+		  state: present
+		  
+		- name: lvolume2
+		  size: 1024m
+		  mount_point: "/backup"
+		  fs_type: xfs
+		  state: present
+		  
+		- name: lvolume_swap
+		  size: 1024m
+		  fs_type: swap
+	# its not typo :) there is no mount point for swap partition
+	          state: present
+    
+    
+    
     1. Group creation 
     First task is group creation, to manage your infrastracture well, we need to provide appropriate groups and permissions
     	Fortunately, Ansible ships with more than a thousand modules, including one for reading CSV files. 
-    This module can provide exactly what's needed for this task. You'll see the module in action below
+    This module can provide exactly whats needful for this task. You will see the module in action below
     
 # to use read_csv you must install community.general lib
 # ansible-galaxy install community.general
@@ -103,7 +147,7 @@ users:
   - username: dev5
     groups: Admins
     
-Afterwards, lets create playbook that go loop through this list
+Afterwards, lets create playbook that loop through this list
       
 ---
 - name: Create multiple local users
