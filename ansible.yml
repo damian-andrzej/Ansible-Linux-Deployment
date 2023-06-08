@@ -9,7 +9,7 @@ roles:
     - role: sudo # setup sudo config
     - role: home_backup # home directories backup
     - role: install_software # install all required package
-    - role: gantsign.oh-my-zsh # install oh-my-zsh
+    - role: default_target # install oh-my-zsh
       users:
       - username: admin
     - role: zsh-plugins # configure oh-my-zsh plugins
@@ -308,6 +308,39 @@ OPTIONAL - use cron jobs to automate backups. It runs their personal backup-home
     minute: 0
     hour: 24
     weekday: 6
+    
+  
+8. Install required software
+
+9. Set default target  multi-user.target
+
+Purpose of this play is to make sure all managed host are booted from multi-user.target
+If someone is not familiar with targets, its upgraded more elastic version of inits.
+
+---
+- name: Make sure default systemd target is multi-user.target
+  hosts: all
+  gather_facs: false
+  #prevent ansible collecting facts info from managed hosts
+  vars:
+    selected_target: "multi-user.target"
+    
+  tasks:
+    - name: check currently used systemd target
+      ansible.builtin.command:
+        cmd: systemctl get-default
+      changed_when: false
+      # its gathering information so task should never report changed state
+      register: target
+      # IMPORTANT - it saves output of cmd command to target variable
+      
+   - name: set default systemd target
+     ansible.builtin.command:
+       cmd: systemctl set-default {{ selected_target }}
+     when: selected_target not in target['stdout']
+     # change affects only in case target is different than multi-user-target
+     become: true
+     # root permission is only needful for this task, so its better to enable it just for 1 task
 
 
       
