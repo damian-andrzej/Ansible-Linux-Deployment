@@ -2,6 +2,7 @@ A description for host preparation using ansible playbooks.
 #I've been using roles to increase quality and readablility.
 This is main part of playbook when roles are induced. Into next points, each of role will be described including ansible code.
 roles: 
+    - role: storage
     - role: groups 
     - role: users
     - role: sshd_config # increase security of sshd service
@@ -15,6 +16,7 @@ roles:
     - role: ufw # configure UFW firewall
     
     0. Format and mount additional file systems
+    
     We need to add mount points for webserver data, backup and swap.
     Redhat ansible library provides roles to automate filesystem creation by LVM.
     
@@ -61,8 +63,9 @@ roles:
     
     
     1. Group creation 
+    
     First task is group creation, to manage your infrastracture well, we need to provide appropriate groups and permissions
-    	Fortunately, Ansible ships with more than a thousand modules, including one for reading CSV files. 
+    Fortunately, Ansible ships with more than a thousand modules, including one for reading CSV files. 
     This module can provide exactly whats needful for this task. You will see the module in action below
     
 # to use read_csv you must install community.general lib
@@ -329,7 +332,7 @@ Usually cron jobs are used for this task but I changed scheduled script for sync
 •	Of course, you could just use the command action to call rsync yourself, 
 but you also have to add a fair number of boilerplate options and host facts.
 
-To install it, use - ansible-galaxy collection install ansible.posix
+# To install it, use - ansible-galaxy collection install ansible.posix
 
 ---
 - name: using synchronize module
@@ -342,7 +345,7 @@ To install it, use - ansible-galaxy collection install ansible.posix
         dest: /backup-local2/backup/home
         recursive: no # enables an archive backup
 	
-OPTIONAL - use cron jobs to automate backups. It runs their personal backup-home script at 24:00 every Saturday
+OPTIONAL - use cron jobs to automate backups. It runs  backup-home script at 24:00 every Saturday
 
 - name: Schedule backups for my home directory
   ansible.builtin.cron:
