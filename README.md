@@ -91,13 +91,13 @@ roles:
       
       roles: 
         - name: redhat.rhel_system_roles.storage
-	//its one of the roles provided by rhel-system-roles package
+	#its one of the roles provided by rhel-system-roles package
 	  storage_pools:
 	    - name: volume_group1
 	      type: lvm
 	      disks:
 	       - /dev/sdb
-	//for different system disk may be named different, its good to precheck it with lsblk cmd
+	# for different system disk may be named different, its good to precheck it with lsblk cmd
 	      volumes:
 	        - name: lvolume1
 		  size: 512m
@@ -114,7 +114,7 @@ roles:
 		- name: lvolume_swap
 		  size: 1024m
 		  fs_type: swap
-	 //its not typo :) there is no mount point for swap partition
+	 # its not typo :) there is no mount point for swap partition
 	          state: present
     ```
     
@@ -125,14 +125,6 @@ roles:
   Fortunately, Ansible ships with more than a thousand modules, including one for reading CSV files. 
   This module can provide exactly whats needful for this task. You will see the module in action below
     
- to use read_csv you must install community.general lib
- ansible-galaxy install community.general
-
- # 2. Users creation
- 
-  Simmilar task connected with first one is user creationm we are going to use same python lib from previous tasks.
-  lets create a csv file that includes list of users
-
  to use read_csv you must install community.general lib
  ansible-galaxy install community.general
 
@@ -154,21 +146,27 @@ roles:
         #comments are not available for groups, in opposite to users
         state: present
       loop: "{{ groups_list.list }}"
-       //.list notation to retrive record from dictionary
+       # .list notation to retrive record from dictionary
        read_csv format csv to dict - simmilar to python read_csv()
       become: true
-       //escalate to root - must have for actual ansible user`
+       # escalate to root - must have for actual ansible user`
       Username,uid,First_name,Last_name,Groups,Password
       ansible_dev,9012,Rachel,Booker,Admins,TempPasswd321
       dev1,9013,Michael,Cortney,Admins,Passw000rd333
       web_dev,9015,Kristian,Michalak,Webmasters,Passxdd2137
       jenkins_dev,9014,Donovan,Valenrod,Admins,Passw333Temp4
       ansible_viewer,9016,No,Name,Admins,Tempopassowrd31
-      ```
-      
+ ```
 
+ # 2. Users creation
+ 
+  Simmilar task connected with first one is user creationm we are going to use same python lib from previous tasks.
+  lets create a csv file that includes list of users
 
+ to use read_csv you must install community.general lib
+ ansible-galaxy install community.general
 
+```
 - name: create users from csv
   hosts: all
   tasks:
@@ -188,10 +186,10 @@ roles:
         comment: "{{ item.First_name }} {{item.Last_name }}"
         state: present
       loop: "{{ users_list.list }}"
-      // .list notation to retrive record from dictionary
-      // read_csv format csv to dict - simmilar to python read_csv()
+      # .list notation to retrive record from dictionary
+      # read_csv format csv to dict - simmilar to python read_csv()
       become: true
-      // escalate to root - must have for actual ansible user
+      # escalate to root - must have for actual ansible user
 ```
 
 2.2 In some cases python library that contains read_csv  may produce some errors. 
