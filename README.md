@@ -257,7 +257,7 @@ Afterwards, lets create playbook that loop through this list
       #validate parameter make final check of user sudo access
 ```
       
-  5. SSH settings
+
   
  # 5.1	Known hosts
   
