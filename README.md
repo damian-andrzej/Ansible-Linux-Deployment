@@ -302,7 +302,7 @@ and then processes the values of the registered variable with the b64decode and 
  - configure not-default port
  
  After playbook make changes to sshd_conf file, sshd service will be restarted by handler.
- Without restart changed will not  be applied. 
+ Without restart changes will not  be applied. 
 
 ``` 
  handlers:
