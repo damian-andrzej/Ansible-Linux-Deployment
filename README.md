@@ -150,13 +150,18 @@ roles:
        read_csv format csv to dict - simmilar to python read_csv()
       become: true
        # escalate to root - must have for actual ansible user`
+
+```
+
+ # Here is sample csv file 
+ 
       Username,uid,First_name,Last_name,Groups,Password
       ansible_dev,9012,Rachel,Booker,Admins,TempPasswd321
       dev1,9013,Michael,Cortney,Admins,Passw000rd333
       web_dev,9015,Kristian,Michalak,Webmasters,Passxdd2137
       jenkins_dev,9014,Donovan,Valenrod,Admins,Passw333Temp4
       ansible_viewer,9016,No,Name,Admins,Tempopassowrd31
- ```
+ 
 
  # 2. Users creation
  
