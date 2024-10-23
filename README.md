@@ -165,7 +165,7 @@ roles:
 
  # 2. Users creation
  
-  Simmilar task connected with first one is user creationm we are going to use same python lib from previous tasks.
+  Simmilar task connected with first one is user creation we are going to use same python lib from previous tasks.
   lets create a csv file that includes list of users
 
  to use read_csv you must install community.general lib
