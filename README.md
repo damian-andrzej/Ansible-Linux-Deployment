@@ -1,6 +1,6 @@
 ## Ansible Host deployment lab
 
-A desire for this project is to make it faster and easier host preparation process using ansible playbooks. This way we are able to personalize machine setup for our purpose. configuration details are  included in Table of Contents.
+A desire for this project is to make it faster and easier host preparation process using ansible playbooks. This way we are able to personalize machine setup for our purpose. Configuration details are  included in Table of Contents.
 I've been using roles to increase quality and readablility. 
 
 ## Table of Contents
