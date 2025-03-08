@@ -18,20 +18,9 @@ I've been using roles to increase quality and readablility.
 
 ## Introduction
 
-I don't want to make this post an introduction to Ansible. There are many high-quality sources one can learn about Ansible from. I will present just some concepts that are necessary to know in order to understand my approach.
+Ansible is a powerful open-source automation tool that simplifies IT infrastructure management using a declarative YAML-based approach. Unlike shell scripts, which are imperative and require manual checks, Ansible ensures idempotency—applying changes only when necessary. It also operates in a push-based manner, managing remote systems from a local machine.
 
-Ansible is an open-source automation tool that provides a simple and efficient way to automate IT infrastructure tasks. It uses a declarative language called YAML to describe the desired state of systems and performs actions to ensure that the systems match that state.
-
-This is different from shell scripts in many ways:
-
-Ansible uses a declarative approach, where you define the desired state of the system and let Ansible handle the execution details. Shell scripts, on the other hand, are imperative, where you explicitly list out the steps to be executed.
-Ansible ensures idempotent execution, which means the same playbook can be run multiple times without causing unintended side effects. Ansible checks the current state of the system and only makes necessary changes to achieve the desired state. Shell scripts often require manual checks and conditions to avoid unintended changes or duplicate actions.
-Ansible uses YAML, a human-readable and easy-to-write format, for defining playbooks and tasks. This makes Ansible playbooks more readable and maintainable compared to shell scripts, which often involve more complex syntax.
-This makes Ansible more convenient to use instead of shell scripts, if that's only possible. Another thing is that Ansible is push-based. While we'd run shell scripts directly on remote host, with Ansible we "push" the desired configuration from our local machine.
-
-I've organized my playbooks as Ansible Roles. This allows me to self-contain each of my tasks. This was very useful during experimenting phase when doing my home server, because if some role malfunctioned and I had problems with fixing it, or even when I changed my thought, all that was needed from me was to comment out particular role from list of main roles to execute.
-
-Roles, which still need polishing or I'm experimenting with, I can run from separate playbook, and have my battle-tested main one unaffected.
+I’ve structured my playbooks as Ansible Roles, making tasks self-contained and modular. This approach was especially useful while setting up my home server, allowing me to easily disable or test individual roles without affecting the main playbook. Experimental roles run separately, keeping my stable configurations intact.
 
 
 ## Getting Started
